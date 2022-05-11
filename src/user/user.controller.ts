@@ -14,6 +14,7 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
+import { UserEmail } from '../decorators/user-email.decorator';
 import { JwtAuthGuard } from '../guards/jwt.guard';
 import { AuthDto } from './dto/auth.dto';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -28,9 +29,11 @@ import { UserService } from './user.service';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
-  async getUser(@Param() id: string) {
-    console.log('(get) params: ' + id);
+  async getUser(@Param() id: string, @UserEmail() email: string) {
+    this.userService.login(email);
+
     const user = await this.userService.findByUserId(id);
     if (!user) {
       throw new HttpException(USER_NOT_FOUND_ERROR, HttpStatus.NOT_FOUND);
@@ -38,8 +41,11 @@ export class UserController {
     return user;
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('all/list')
-  async getUsers() {
+  async getUsers(@UserEmail() email: string) {
+    this.userService.login(email);
+
     return this.userService.findAll();
   }
 
@@ -57,7 +63,9 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard)
   @Delete('delete/:id')
-  async delete(@Param() id: string) {
+  async delete(@Param() id: string, @UserEmail() email: string) {
+    this.userService.login(email);
+
     const deletedUser = await this.userService.delete(id);
     if (!deletedUser) {
       throw new HttpException(USER_NOT_FOUND_ERROR, HttpStatus.NOT_FOUND);
@@ -67,7 +75,9 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe())
   @Patch('update')
-  async update(@Body() dto: UpdateUserDto) {
+  async update(@Body() dto: UpdateUserDto, @UserEmail() email: string) {
+    this.userService.login(email);
+
     this.userService.update(dto);
   }
 
