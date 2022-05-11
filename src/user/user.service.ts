@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { compare, genSalt, hash } from 'bcryptjs';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { USER_NOT_FOUND_ERROR, WRONG_PASSWORD_ERROR } from './user.constants';
@@ -15,9 +15,10 @@ export class UserService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async findByUserId(userId: string): Promise<UserModel | null> {
-    const user = this.userModel.findById(userId);
-    return user;
+  async findByUserId(userId: string): Promise<UserModel> {
+    return this.userModel
+      .find({ userId: new Types.ObjectId(userId) })
+      .exec()[0];
   }
 
   async findAll(): Promise<UserModel[]> {
@@ -47,11 +48,15 @@ export class UserService {
   }
 
   async update(updateUserDto: UpdateUserDto): Promise<UserModel | null> {
-    const user = await this.userModel.findById(updateUserDto.userId);
-    user.userName = updateUserDto.userName;
-    user.userEmail = updateUserDto.userEmail;
+    const user = await this.userModel.findOne({
+      userId: new Types.ObjectId(updateUserDto.userId),
+    });
 
-    return user.save();
+    const update = {
+      userName: updateUserDto.userName,
+      userEmail: updateUserDto.userEmail,
+    };
+    return user.updateOne(update);
   }
 
   async validateUser(

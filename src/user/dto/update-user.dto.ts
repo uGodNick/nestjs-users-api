@@ -2,7 +2,7 @@ import { IsString, IsEmail } from 'class-validator';
 
 export class UpdateUserDto {
   @IsString()
-  userId: number;
+  userId: string;
 
   @IsString()
   @IsEmail()
